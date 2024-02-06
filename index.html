@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Booking Form</title>
+    <!-- Add Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Add Bootstrap JavaScript and jQuery (ensure they are loaded after your jQuery) -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</head>
+<body>
+<div class="container mt-4">
+    <h1>Flight Booking Form</h1>
+    <form id="bookingForm" action="submit.php" method="post">
+
+        <!-- Airline Input -->
+        <div class="form-group">
+            <label for="airline">Airline:</label>
+            <input type="text" class="form-control" id="airline" name="airline" minlength="2" maxlength="2" required>
+        </div>
+
+        <!-- PNR Input -->
+        <div class="form-group">
+            <label for="gant_pnr">PNR:</label>
+            <input type="text" class="form-control" id="gant_pnr" name="gant_pnr" minlength="6" maxlength="6" required>
+        </div>
+
+        <!-- Passenger First Name Input -->
+        <div class="form-group">
+            <label for="passenger_first_name">Passenger First Name:</label>
+            <input type="text" class="form-control" id="passenger_first_name" name="passenger_first_name" required>
+        </div>
+
+        <!-- Passenger Last Name Input -->
+        <div class="form-group">
+            <label for="passenger_last_name">Passenger Last Name:</label>
+            <input type="text" class="form-control" id="passenger_last_name" name="passenger_last_name" required>
+        </div>
+
+        <!-- Date of Birth Input -->
+        <div class="form-group">
+            <label for="date_of_birth">Date of Birth:</label>
+            <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" required>
+        </div>
+
+        <!-- Payment Method Input -->
+        <div class="card mb-3">
+            <div class="card-body">
+
+                <div class="form-group">
+                    <label for="payment_method">Payment Method:</label>
+                    <select class="form-control" id="payment_method" name="payment_method" required>
+                        <option value="" disabled selected>Select Payment Method</option>
+                        <option value="AA Points">AA Points</option>
+                        <option value="Airlink">Airlink</option>
+                        <option value="E-Pass #">E-Pass #</option>
+                        <option value="SW Points">SW Points</option>
+                    </select>
+                </div>
+
+                <!-- Points Input (Hidden by default) -->
+                <div class="form-group" id="pointsLabel" style="display: none;">
+                    <label for="points">Points:</label>
+                    <input type="number" class="form-control" id="points" name="points" required>
+                </div>
+
+                <!-- E-Pass Code Input (Hidden by default) -->
+                <div class="form-group" id="epassCodeLabel" style="display: none;">
+                    <label for="epass_code">E-Pass #:</label>
+                    <input type="text" class="form-control" id="epass_code" name="epass_code" required>
+                </div>
+
+                <!-- Ticketed Cost Input -->
+                <div class="form-group">
+                    <label for="ticketed_cost">Ticketed Cost:</label>
+                    <input type="number" class="form-control" id="ticketed_cost" name="ticketed_cost" step="0.01"
+                           required>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flight Legs Section -->
+        <div class="mb-4">
+            <h4>Flight Legs</h4>
+            <div id="flightLegs">
+                <!-- Dynamic flight legs go here -->
+            </div>
+            <button type="button" id="addFlightLeg" class="btn btn-primary mt-2">Add Flight Leg</button>
+        </div>
+
+        <!-- Submit Button -->
+        <input type="submit" class="btn btn-success" value="Submit">
+    </form>
+</div>
+
+<!-- Bootstrap card for dynamically added flight leg -->
+<script>
+    // Function to create a flight leg card
+    function createFlightLeg() {
+        return `
+            <div class="flightLeg card mt-3">
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="flight_number">Flight Number:</label>
+                        <input type="number" class="form-control" name="flight_number[]" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="departure_city">Departure City:</label>
+                        <input type="text" class="form-control" name="departure_city[]" minlength="3" maxlength="3" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="departure_time">Departure Date and Time:</label>
+                        <input type="datetime-local" class="form-control" name="departure_time[]" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="arrival_city">Arrival City:</label>
+                        <input type="text" class="form-control" name="arrival_city[]" minlength="3" maxlength="3" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="arrival_time">Arrival Date and Time:</label>
+                        <input type="datetime-local" class="form-control" name="arrival_time[]" required>
+                    </div>
+
+                    <button type="button" class="btn btn-danger removeFlightLeg">Remove Flight Leg</button>
+                </div>
+            </div>
+        `;
+    }
+
+    // Function to toggle visibility and required status of points and epass_code fields based on payment method
+    function togglePointsAndEpassCodeFields() {
+        var selectedPaymentMethod = $("#payment_method").val();
+
+        $("#points, #pointsLabel").hide().removeAttr("required");
+        $("#epass_code, #epassCodeLabel").hide().removeAttr("required");
+
+        if (selectedPaymentMethod === "AA Points" || selectedPaymentMethod === "SW Points") {
+            $("#points, #pointsLabel").show().attr("required", "required");
+        }
+
+        if (selectedPaymentMethod === "E-Pass #") {
+            $("#epass_code, #epassCodeLabel").show().attr("required", "required");
+        }
+    }
+
+    // Function to submit the form data to the API
+    function submitFormData(formData) {
+        // TO DO THIS MUST BE CHANGED TO THE RIGHT WEB HOOK URL
+        fetch("https://CHANGEME.azurewebsites.net/api/Webhook", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-functions-key": "" // TO DO THIS MUST BE CHANGED TO THE RIGHT HEADER KEY
+            },
+            body: JSON.stringify(formData)
+        })
+            .then(response => {
+                if (response.status === 200) {
+                    // Clear form data
+                    $("#bookingForm")[0].reset();
+                    $("#flightLegs").empty();
+
+                    // Display success message
+                    $("#submitMessage").text("Flight Information Successfully Submitted").removeClass("text-danger").addClass("text-success");
+                } else {
+                    // Display error message
+                    $("#submitMessage").text("An error occurred while submitting the data").removeClass("text-success").addClass("text-danger");
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                // Display error message
+                $("#submitMessage").text("An error occurred while submitting the data").removeClass("text-success").addClass("text-danger");
+            });
+    }
+
+    // Document Ready
+    $(document).ready(function () {
+        togglePointsAndEpassCodeFields();
+
+        $("#payment_method").change(function () {
+            togglePointsAndEpassCodeFields();
+        });
+
+        // Add Flight Leg Button Click Handler
+        $("#addFlightLeg").click(function () {
+            var flightLeg = createFlightLeg();
+            $("#flightLegs").append(flightLeg);
+        });
+
+        // Remove Flight Leg Button Click Handler
+        $(document).on("click", ".removeFlightLeg", function () {
+            $(this).closest(".flightLeg").remove();
+        });
+
+        // Form Submission Handling
+        $("#bookingForm").submit(function (event) {
+            event.preventDefault();
+
+            // Validate airline input
+            var airlineInput = $("#airline").val();
+            if (airlineInput.length !== 2 || !/^[a-zA-Z]+$/.test(airlineInput)) {
+                alert("Airline must be exactly two letters.");
+                return;
+            }
+
+            // Validate PNR input
+            var gantPnrInput = $("#gant_pnr").val();
+            if (gantPnrInput.length !== 6) {
+                alert("PNR must be exactly 6 characters long.");
+                return;
+            }
+
+            // Validate date_of_birth input
+            var dobInput = new Date($("#date_of_birth").val());
+            var currentDate = new Date();
+            var age = currentDate.getFullYear() - dobInput.getFullYear();
+            if (currentDate.getMonth() < dobInput.getMonth() || (currentDate.getMonth() === dobInput.getMonth() && currentDate.getDate() < dobInput.getDate())) {
+                age--;
+            }
+
+            if (age < 18) {
+                alert("Check the passenger's date of birth, it is under 18 years of age.");
+                return;
+            }
+
+            // Validate ticketed_cost input
+            var ticketedCostInput = parseFloat($("#ticketed_cost").val());
+            if (isNaN(ticketedCostInput) || ticketedCostInput < 0 || ticketedCostInput > 2999.99) {
+                alert("Ticketed cost must be a valid amount between 0.00 and 2999.99.");
+                return;
+            }
+
+            // Check if at least one flight leg is added
+            if ($(".flightLeg").length === 0) {
+                alert("At least one flight leg is required.");
+                return;
+            }
+
+            // Get the airline information
+            var airline = $("#airline").val().toUpperCase();
+
+            // Create an object to store the form data
+            var formData = {
+                "gant_pnr": $("#gant_pnr").val(),
+                "passenger_first_name": $("#passenger_first_name").val(),
+                "passenger_last_name": $("#passenger_last_name").val(),
+                "date_of_birth": $("#date_of_birth").val(),
+                "ticketed_cost": parseFloat($("#ticketed_cost").val()),
+                "payment_method": $("#payment_method").val(), // Add payment method
+                "points": $("#points").val() || null, // Add points with null if empty
+                "epass_code": $("#epass_code").val() || null, // Add ePass code with null if empty
+                "flight_legs": []
+            };
+
+            var sequence = 1;
+
+            // Loop through each flight leg section and add it to formData
+            $(".flightLeg").each(function (index) {
+                var departureTime = new Date($(this).find("input[name='departure_time[]']").val());
+                var arrivalTime = new Date($(this).find("input[name='arrival_time[]']").val());
+
+                var departureFormatted = departureTime.getDate().toString().padStart(2, '0') +
+                    departureTime.toLocaleString('en-US', {month: 'short'}) +
+                    departureTime.getFullYear() + ' ' +
+                    departureTime.getHours().toString().padStart(2, '0') + ':' +
+                    departureTime.getMinutes().toString().padStart(2, '0');
+
+                var arrivalFormatted = arrivalTime.getDate().toString().padStart(2, '0') +
+                    arrivalTime.toLocaleString('en-US', {month: 'short'}) +
+                    arrivalTime.getFullYear() + ' ' +
+                    arrivalTime.getHours().toString().padStart(2, '0') + ':' +
+                    arrivalTime.getMinutes().toString().padStart(2, '0');
+
+                var flightLegData = {
+                    "sequence": sequence++,
+                    "airline": airline.toUpperCase(),
+                    "airline_pnr": formData.gant_pnr,
+                    "flight_number": $(this).find("input[name='flight_number[]']").val(),
+                    "departure_city": $(this).find("input[name='departure_city[]']").val().toUpperCase(),
+                    "departure_time": departureFormatted,
+                    "arrival_city": $(this).find("input[name='arrival_city[]']").val().toUpperCase(),
+                    "arrival_time": arrivalFormatted
+                };
+
+                formData.flight_legs.push(flightLegData);
+            });
+
+            var jsonData = JSON.stringify(formData, null, 4);
+
+            // Log data to console for debug
+            console.log(jsonData);
+
+            // Call the submitFormData function with the formData
+            submitFormData(formData);
+        });
+    });
+</script>
+</body>
+</html>
