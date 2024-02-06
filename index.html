@@ -45,6 +45,18 @@
             <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" required>
         </div>
 
+        <!-- Event ID Input -->
+        <div class="form-group">
+            <label for="event_id">Event ID:</label>
+            <input type="text" class="form-control" id="event_id" name="event_id" minlength="8" maxlength="8">
+        </div>
+
+        <!-- Event Registration Input -->
+        <div class="form-group">
+            <label for="event_registration">Event Registration:</label>
+            <input type="text" class="form-control" id="event_registration" name="event_registration">
+        </div>
+
         <!-- Payment Method Input -->
         <div class="card mb-3">
             <div class="card-body">
@@ -66,10 +78,16 @@
                     <input type="number" class="form-control" id="points" name="points" required>
                 </div>
 
-                <!-- E-Pass Code Input (Hidden by default) -->
-                <div class="form-group" id="epassCodeLabel" style="display: none;">
-                    <label for="epass_code">E-Pass #:</label>
-                    <input type="text" class="form-control" id="epass_code" name="epass_code" required>
+                <!-- E-Pass Code 1 Input (Hidden by default) -->
+                <div class="form-group" id="epassCodeLabel1" style="display: none;">
+                    <label for="epass_code1">E-Pass Code 1:</label>
+                    <input type="text" class="form-control" id="epass_code1" name="epass_code1" required>
+                </div>
+
+                <!-- E-Pass Code 2 Input (Hidden by default) -->
+                <div class="form-group" id="epassCodeLabel2" style="display: none;">
+                    <label for="epass_code2">E-Pass Code 2:</label>
+                    <input type="text" class="form-control" id="epass_code2" name="epass_code2">
                 </div>
 
                 <!-- Ticketed Cost Input -->
@@ -88,6 +106,12 @@
                 <!-- Dynamic flight legs go here -->
             </div>
             <button type="button" id="addFlightLeg" class="btn btn-primary mt-2">Add Flight Leg</button>
+        </div>
+
+        <!-- Airline Input -->
+        <div class="form-group">
+            <label for="pin">Access PIN:</label>
+            <input type="text" class="form-control" id="pin" name="pin" required>
         </div>
 
         <!-- Submit Button -->
@@ -138,14 +162,16 @@
         var selectedPaymentMethod = $("#payment_method").val();
 
         $("#points, #pointsLabel").hide().removeAttr("required");
-        $("#epass_code, #epassCodeLabel").hide().removeAttr("required");
+        $("#epass_code1, #epassCodeLabel1").hide().removeAttr("required");
+        $("#epass_code2, #epassCodeLabel2").hide().removeAttr("required");
 
         if (selectedPaymentMethod === "AA Points" || selectedPaymentMethod === "SW Points") {
             $("#points, #pointsLabel").show().attr("required", "required");
         }
 
         if (selectedPaymentMethod === "E-Pass #") {
-            $("#epass_code, #epassCodeLabel").show().attr("required", "required");
+            $("#epass_code1, #epassCodeLabel1").show().attr("required", "required");
+            $("#epass_code2, #epassCodeLabel2").show().attr("required", "required");
         }
     }
 
@@ -203,13 +229,6 @@
         $("#bookingForm").submit(function (event) {
             event.preventDefault();
 
-            // Validate airline input
-            var airlineInput = $("#airline").val();
-            if (airlineInput.length !== 2 || !/^[a-zA-Z]+$/.test(airlineInput)) {
-                alert("Airline must be exactly two letters.");
-                return;
-            }
-
             // Validate PNR input
             var gantPnrInput = $("#gant_pnr").val();
             if (gantPnrInput.length !== 6) {
@@ -255,8 +274,12 @@
                 "ticketed_cost": parseFloat($("#ticketed_cost").val()),
                 "payment_method": $("#payment_method").val(), // Add payment method
                 "points": $("#points").val() || null, // Add points with null if empty
-                "epass_code": $("#epass_code").val() || null, // Add ePass code with null if empty
-                "flight_legs": []
+                "epass_code1": $("#epass_code1").val() || null, // Add ePass code with null if empty
+                "epass_code2": $("#epass_code2").val() || null, // Add ePass code with null if empty
+                "event_id": $("#event_id").val() || null, // Add ePass code with null if empty
+                "event_registration": $("#event_registration").val() || null, // Add ePass code with null if empty
+                "flight_legs": [],
+                "pin": $("#pin").val()
             };
 
             var sequence = 1;
